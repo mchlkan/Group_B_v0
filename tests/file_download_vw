@@ -1,0 +1,31 @@
+import pandas as pd
+import requests
+import json
+
+# Fetch the data
+df = pd.read_csv(
+    "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.csv?v=1&csvType=full&useColumnShortNames=true",
+    storage_options={'User-Agent': 'Our World In Data data fetch/1.0'}
+)
+
+# Fetch the metadata
+metadata = requests.get(
+    "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.metadata.json?v=1&csvType=full&useColumnShortNames=true"
+).json()
+
+# --- Explore the DataFrame ---
+print("=== SHAPE ===")
+print(df.shape)  # (rows, columns)
+
+print("\n=== FIRST 5 ROWS ===")
+print(df.head())
+
+print("\n=== COLUMN NAMES & DTYPES ===")
+print(df.dtypes)
+
+print("\n=== BASIC STATS ===")
+print(df.describe())
+
+# --- Explore the Metadata ---
+print("\n=== METADATA ===")
+print(json.dumps(metadata, indent=2))
