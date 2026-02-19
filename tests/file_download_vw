@@ -2,30 +2,70 @@ import pandas as pd
 import requests
 import json
 
-# Fetch the data
-df = pd.read_csv(
-    "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.csv?v=1&csvType=full&useColumnShortNames=true",
-    storage_options={'User-Agent': 'Our World In Data data fetch/1.0'}
-)
+class OWIDDataset:
+    BASE_URL = "https://ourworldindata.org/grapher/"
+    
+    def __init__(self, slug: str):
+        self.slug = slug #the part of the URL identifying the dataset
+        self.df = None
+        self.metadata = None
+        self._fetch()
+    
+    def _build_urls(self):
+        params = "?v=1&csvType=full&useColumnShortNames=true"
+        csv_url = f"{self.BASE_URL}{self.slug}.csv{params}"
+        meta_url = f"{self.BASE_URL}{self.slug}.metadata.json{params}"
+        return csv_url, meta_url
+    
+    def _fetch(self):
+        csv_url, meta_url = self._build_urls()
+        print(f"Fetching {self.slug}...")
+        self.df = pd.read_csv(csv_url, storage_options={'User-Agent': 'Our World In Data data fetch/1.0'})
+        self.metadata = requests.get(meta_url).json()
+        print(f"  ✓ Loaded {self.df.shape[0]} rows, {self.df.shape[1]} columns")
+    
+# the collection exposes datasets as attributes, and each dataset exposes its columns as attributes
+class OWIDCollection:
+    
+    DATASETS = {
+        'forest': 'annual-change-forest-area',
+        'deforestation': 'annual-deforestation',
+        'forest_landmass': 'forest-area-as-share-of-land-area',
+    }
+    
+    def __init__(self):
+        self.datasets = {}
+        for name, slug in self.DATASETS.items():
+            self.add(slug, name=name)
+    
+    def add(self, slug: str, name: str | None = None ):
+        key = name or slug
+        dataset = OWIDDataset(slug)
+        self.datasets[key] = dataset
 
-# Fetch the metadata
-metadata = requests.get(
-    "https://ourworldindata.org/grapher/forest-area-as-share-of-land-area.metadata.json?v=1&csvType=full&useColumnShortNames=true"
-).json()
+        # Set the dataset as an attribute on the collection
+        attr_name = key.strip().lower().replace(" ", "_").replace("-", "_")
+        setattr(self, attr_name, dataset)
+        
+        return self
+    
+    def __getitem__(self, key):
+        return self.datasets[key]
+    
+    def __repr__(self):
+        return f"OWIDCollection({list(self.datasets.keys())})"
+    
+    def summary(self):
+        for dataset in self.datasets.values():
+            dataset.summary()
+    
+    def heads(self, n=5):
+        for name, dataset in self.datasets.items():
+            print(f"\n=== {name} ===")
+            print(dataset.df.head(n))
+    
 
-# --- Explore the DataFrame ---
-print("=== SHAPE ===")
-print(df.shape)  # (rows, columns)
+# access one of the datasets and print the first few rows
+collection = OWIDCollection()
+collection.heads()
 
-print("\n=== FIRST 5 ROWS ===")
-print(df.head())
-
-print("\n=== COLUMN NAMES & DTYPES ===")
-print(df.dtypes)
-
-print("\n=== BASIC STATS ===")
-print(df.describe())
-
-# --- Explore the Metadata ---
-print("\n=== METADATA ===")
-print(json.dumps(metadata, indent=2))
