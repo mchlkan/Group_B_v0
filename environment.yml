@@ -1,0 +1,10 @@
+name: AdPro_Group-B
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - geopandas
+  - matplotlib
+  - pandas
+  - numpy
+prefix: /opt/miniconda3/envs/AdPro_Group-B
