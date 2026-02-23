@@ -32,9 +32,10 @@ objectobj = DataDownloader()
 
 st.title('Test Title this tests the title')
 selbox_text = st.selectbox(options  = objectobj.datasets.keys(), label = 'a select box?')
-target_year = st.select_slider(options=range(1995,2020), label = 'year')
-st.text(f'This graph shows {selbox_text} in the year {target_year}')
 df_displayed = objectobj.datasets[selbox_text]
+target_year = st.select_slider(options=range(df_displayed.year.min(),df_displayed.year.max()), label = 'year')
+st.text(f'This graph shows {selbox_text} in the year {target_year}')
+
 df_displayed = df_displayed[df_displayed.year == target_year].groupby('entity')[df_displayed.columns[-1]].mean()
 st.bar_chart(df_displayed)
 st.text(f'the select box says: {selbox_text}')
